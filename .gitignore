@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+frontend/node_modules/
+frontend/dist/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.env
+reports/*.json
+reports/*.sarif

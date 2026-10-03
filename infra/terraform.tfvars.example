@@ -1,0 +1,4 @@
+app_name = "flightreserve"
+location = "eastus2"
+db_admin_username = "flightadmin"
+# db_admin_password is passed by GitHub Actions from a secret.

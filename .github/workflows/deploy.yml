@@ -1,0 +1,43 @@
+name: 4 - Build Test and Deploy
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - name: Test backend
+        run: dotnet test backend.tests/FlightReservation.Api.Tests.csproj --configuration Release
+      - uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Read Azure resource names
+        id: azure
+        shell: bash
+        run: |
+          RG=$(az group list --query "[?starts_with(name, 'rg-flightreserve-')].name | [0]" -o tsv)
+          ACR=$(az acr list -g "$RG" --query "[0].name" -o tsv)
+          APP=$(az containerapp list -g "$RG" --query "[0].name" -o tsv)
+          test -n "$RG" && test -n "$ACR" && test -n "$APP"
+          echo "rg=$RG" >> "$GITHUB_OUTPUT"
+          echo "acr=$ACR" >> "$GITHUB_OUTPUT"
+          echo "app=$APP" >> "$GITHUB_OUTPUT"
+      - name: Login to ACR
+        run: az acr login --name "${{ steps.azure.outputs.acr }}"
+      - name: Build and push image
+        run: |
+          LOGIN_SERVER=$(az acr show -n "${{ steps.azure.outputs.acr }}" --query loginServer -o tsv)
+          IMAGE="$LOGIN_SERVER/flight-reservation:${{ github.sha }}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - name: Deploy to Azure Container Apps
+        run: az containerapp update -n "${{ steps.azure.outputs.app }}" -g "${{ steps.azure.outputs.rg }}" --image "$IMAGE"
+      - name: Application URL
+        run: az containerapp show -n "${{ steps.azure.outputs.app }}" -g "${{ steps.azure.outputs.rg }}" --query properties.configuration.ingress.fqdn -o tsv

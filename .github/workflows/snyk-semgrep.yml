@@ -1,0 +1,43 @@
+name: 3 - Snyk and Semgrep Security
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - name: Install dependencies
+        run: |
+          dotnet restore backend/FlightReservation.Api.csproj
+          npm install --prefix frontend
+      - name: Build container image
+        run: docker build -t flight-reservation:${{ github.sha }} .
+      - name: Install scanners
+        run: |
+          npm install -g snyk
+          python -m pip install --upgrade pip semgrep
+          mkdir -p reports
+      - name: Snyk dependency scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk test --all-projects --severity-threshold=high --json-file-output=reports/snyk-code.json
+      - name: Snyk container scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk container test flight-reservation:${{ github.sha }} --severity-threshold=high --json-file-output=reports/snyk-container.json
+      - name: Semgrep scan
+        run: semgrep scan --config auto --error --severity ERROR --json --output reports/semgrep.json .
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: reports/
