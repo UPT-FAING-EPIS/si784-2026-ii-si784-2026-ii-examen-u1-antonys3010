@@ -97,9 +97,14 @@ Consulta `SETUP-ENTREGA.md` para el procedimiento completo.
 
 Completar después de ejecutar las automatizaciones:
 
-- Aplicación publicada: `https://<fqdn-de-azure-container-apps>`
-- Repositorio: `https://github.com/<usuario>/flight-reservation-system`
-- Sonar: `https://sonarcloud.io/project/overview?id=<SONAR_PROJECT_KEY>`
+- Aplicación publicada:
+ 
+
+- Repositorio:
+  https://github.com/UPT-FAING-EPIS/si784-2026-ii-si784-2026-ii-examen-u1-antonys3010
+
+- SonarQube Cloud:
+  https://sonarcloud.io/summary/overall?id=si784-examen-u1-antonys3010
 
 ## Estructura
 
