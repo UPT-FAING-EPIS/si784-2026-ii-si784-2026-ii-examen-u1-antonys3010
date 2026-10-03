@@ -12,16 +12,18 @@ namespace FlightReservation.Api.Tests;
 
 public class ApiFactory : WebApplicationFactory<Program>
 {
+    private readonly string _databaseName = $"integration-flights-{Guid.NewGuid()}";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<AppDbContext>>();
-            services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase($"integration-flights-{Guid.NewGuid()}"));
+            services.AddDbContext<AppDbContext>(options =>
+                options.UseInMemoryDatabase(_databaseName));
         });
     }
 }
-
 public class ApiIntegrationTests : IClassFixture<ApiFactory>
 {
     private readonly HttpClient _client;
